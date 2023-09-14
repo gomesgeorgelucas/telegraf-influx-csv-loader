@@ -1,0 +1,53 @@
+version: "3.9"
+services:
+  influx-apache:
+    image: httpd:2.4.49-alpine
+    hostname: influx-apache
+    networks:
+      - "influx-network"
+    container_name: influx-apache
+    ports:
+      - "8181:80"
+    volumes:
+      - ./apache-files:/usr/local/apache2/htdocs:rw
+    restart: unless-stopped
+  telegraf:
+    image: telegraf:latest
+    hostname: telegraf
+    networks:
+      - "influx-network"
+    pid: "host"
+    container_name: telegraf
+    ports:
+      - "8092:8092"
+      - "8094:8094"
+      - "8125:8125"
+    volumes:
+      - ./telegraf/config/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - ./telegraf/files:/etc/telegraf/files:rw
+    environment:
+      - INFLUX_TOKEN=umTokenQualquer
+    restart: unless-stopped
+  influxdb2:
+    image: influxdb:2.7-alpine
+    hostname: influxdb2
+    networks:
+      - "influx-network"
+    container_name: influxdb2
+    ports:
+      - "8087:8086"
+    volumes:
+      - ./influx-files:/var/lib/influxdb2:rw
+      - ./influx-config:/var/lib/influxdb2:rw
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=administrator
+      - DOCKER_INFLUXDB_INIT_PASSWORD=password12345678
+      - DOCKER_INFLUXDB_INIT_ORG=influxorganization
+      - DOCKER_INFLUXDB_INIT_BUCKET=events
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=umTokenQualquer
+    restart: unless-stopped
+
+networks:
+  influx-network:
+    driver: bridge
